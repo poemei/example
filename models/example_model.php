@@ -22,11 +22,15 @@ final class example_model extends model
 
     public function getModuleInformation(): array
     {
+        $metadata = $this->moduleMetadata();
+
         return [
-            'name' => 'Example',
-            'slug' => 'example',
-            'version' => '2.0.0',
-            'schema_version' => $this->targetVersion(),
+            'name' => trim((string) ($metadata['name'] ?? 'Example')),
+            'module' => trim((string) ($metadata['module'] ?? 'example')),
+            'slug' => trim((string) ($metadata['module'] ?? 'example')),
+            'version' => trim((string) ($metadata['version'] ?? '')),
+            'schema_version' => trim((string) ($metadata['schema_version'] ?? '')),
+            'update_url' => trim((string) ($metadata['update_url'] ?? '')),
             'tables' => self::TABLES,
         ];
     }
@@ -141,35 +145,20 @@ final class example_model extends model
     public function getRecords(): array
     {
         return $this->fetchAll(
-            'SELECT `id`, `title`, `body`, `is_active`, '
-            . '`created_at`, `updated_at` '
-            . 'FROM `' . self::RECORD_TABLE . '` '
-            . 'ORDER BY `id` DESC'
-        ) ?: [];
-    }
-
-    public function getRecord(int $id): ?array
-    {
-        if ($id < 1) {
-            return null;
-        }
-
-        $row = $this->fetch(
-            'SELECT `id`, `title`, `body`, `is_active`, '
-            . '`created_at`, `updated_at` '
-            . 'FROM `' . self::RECORD_TABLE . '` '
-            . 'WHERE `id` = :id LIMIT 1',
-            ['id' => $id]
+            'SELECT `id`, `title`, `body`, `is_active`, `created_at`, `updated_at` '
+            . 'FROM `' . self::RECORD_TABLE . '` ORDER BY `id` ASC'
         );
-
-        return is_array($row) ? $row : null;
     }
 
-    public function createRecord(array $input): int
+    public function createRecord(array $input): void
     {
-        return (int) $this->insert(
-            self::RECORD_TABLE,
-            $this->validatedRecord($input)
+        $record = $this->validateRecord($input);
+
+        $this->query(
+            'INSERT INTO `' . self::RECORD_TABLE . '` '
+            . '(`title`, `body`, `is_active`) '
+            . 'VALUES (:title, :body, :is_active)',
+            $record
         );
     }
 
@@ -177,62 +166,76 @@ final class example_model extends model
     {
         $id = (int) ($input['id'] ?? 0);
 
-        if ($id < 1 || $this->getRecord($id) === null) {
+        if ($id < 1 || $this->findRecord($id) === false) {
             throw new InvalidArgumentException(
                 'A valid Example record is required.'
             );
         }
 
-        $this->update(
-            self::RECORD_TABLE,
-            $this->validatedRecord($input),
-            'id = :id',
-            ['id' => $id]
+        $record = $this->validateRecord($input);
+        $record['id'] = $id;
+
+        $this->query(
+            'UPDATE `' . self::RECORD_TABLE . '` SET '
+            . '`title` = :title, '
+            . '`body` = :body, '
+            . '`is_active` = :is_active '
+            . 'WHERE `id` = :id',
+            $record
         );
     }
 
     public function deleteRecord(int $id): void
     {
-        if ($id < 1 || $this->getRecord($id) === null) {
+        if ($id < 1 || $this->findRecord($id) === false) {
             throw new InvalidArgumentException(
                 'A valid Example record is required.'
             );
         }
 
         $this->query(
-            'DELETE FROM `' . self::RECORD_TABLE . '` '
-            . 'WHERE `id` = :id',
+            'DELETE FROM `' . self::RECORD_TABLE . '` WHERE `id` = :id',
             ['id' => $id]
         );
     }
 
-    private function validatedRecord(array $input): array
+    private function findRecord(int $id): array|false
+    {
+        return $this->fetch(
+            'SELECT `id` FROM `' . self::RECORD_TABLE . '` '
+            . 'WHERE `id` = :id LIMIT 1',
+            ['id' => $id]
+        );
+    }
+
+    private function validateRecord(array $input): array
     {
         $title = trim((string) ($input['title'] ?? ''));
         $body = trim((string) ($input['body'] ?? ''));
+        $active = isset($input['is_active']) ? 1 : 0;
 
-        if ($title === '' || strlen($title) > 150) {
+        if ($title === '' || mb_strlen($title) > 150) {
             throw new InvalidArgumentException(
-                'Title is required and must be 150 characters or fewer.'
+                'Title is required and may not exceed 150 characters.'
             );
         }
 
-        if ($body === '' || strlen($body) > 2000) {
+        if ($body === '' || mb_strlen($body) > 2000) {
             throw new InvalidArgumentException(
-                'Body is required and must be 2,000 characters or fewer.'
+                'Body is required and may not exceed 2000 characters.'
             );
         }
 
         return [
             'title' => $title,
             'body' => $body,
-            'is_active' => isset($input['is_active']) ? 1 : 0,
+            'is_active' => $active,
         ];
     }
 
     /*
      * -----------------------------------------------------------------
-     * Lifecycle Helpers
+     * Schema state helpers
      * -----------------------------------------------------------------
      */
 
@@ -243,8 +246,7 @@ final class example_model extends model
         }
 
         $row = $this->fetch(
-            'SELECT `schema_version` '
-            . 'FROM `' . self::STATE_TABLE . '` '
+            'SELECT `schema_version` FROM `' . self::STATE_TABLE . '` '
             . 'WHERE `id` = 1 LIMIT 1'
         );
 
@@ -259,18 +261,30 @@ final class example_model extends model
 
     private function targetVersion(): string
     {
-        $raw = file_get_contents(__DIR__ . '/../module.json');
-        $metadata = is_string($raw)
-            ? json_decode($raw, true)
-            : null;
-
-        $version = is_array($metadata)
-            ? trim((string) ($metadata['schema_version'] ?? ''))
-            : '';
+        $metadata = $this->moduleMetadata();
+        $version = trim((string) ($metadata['schema_version'] ?? ''));
 
         return $this->validVersion($version)
             ? $version
             : '';
+    }
+
+    private function moduleMetadata(): array
+    {
+        $file = __DIR__ . '/../module.json';
+
+        if (!is_file($file) || is_link($file)) {
+            return [];
+        }
+
+        $raw = file_get_contents($file);
+        $metadata = is_string($raw)
+            ? json_decode($raw, true)
+            : null;
+
+        return is_array($metadata)
+            ? $metadata
+            : [];
     }
 
     private function validVersion(string $version): bool
