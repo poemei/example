@@ -1,5 +1,6 @@
 <?php
 // path: /user/modules/example/views/admin/index.php
+/* [AI:GPT-5.6 Sol | 2026-10-05 UTC] */
 
 require APPROOT . '/views/inc/head.php';
 
@@ -29,223 +30,258 @@ $error = $data['error'] ?? null;
         CSRF-protected POST actions, and visible success or failure status.
     </p>
 
-    <p>
-        Data lifecycle operations are intentionally distinct from the Module
-        lifecycle. <strong>Delete Data</strong> removes Example-owned records
-        while preserving the installed schema. <strong>Data Reset</strong>
-        removes mutable Example data and restores the canonical reference
-        records supplied with the Module.
-    </p>
-
     <?php if ($message): ?>
-        <div
-            role="status"
-            style="padding: .75rem; margin-bottom: 1rem; border: 1px solid #198754;"
-        >
+        <div class="alert alert-success" role="status">
             <strong>Success:</strong>
             <?= htmlspecialchars((string) $message, ENT_QUOTES, 'UTF-8'); ?>
         </div>
     <?php endif; ?>
 
     <?php if ($error): ?>
-        <div
-            role="alert"
-            style="padding: .75rem; margin-bottom: 1rem; border: 1px solid #dc3545;"
-        >
+        <div class="alert alert-danger" role="alert">
             <strong>Error:</strong>
             <?= htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8'); ?>
         </div>
     <?php endif; ?>
 
-    <section>
-        <h2>Module &amp; Data Lifecycle</h2>
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button
+                class="nav-link active"
+                id="records-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#records-pane"
+                type="button"
+                role="tab"
+                aria-controls="records-pane"
+                aria-selected="true"
+            >Records</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button
+                class="nav-link"
+                id="lifecycle-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#lifecycle-pane"
+                type="button"
+                role="tab"
+                aria-controls="lifecycle-pane"
+                aria-selected="false"
+            >Lifecycle</button>
+        </li>
+    </ul>
 
-        <dl>
-            <dt>Module</dt>
-            <dd><?= htmlspecialchars((string) ($module['name'] ?? 'Example'), ENT_QUOTES, 'UTF-8'); ?></dd>
+    <div class="tab-content">
+        <div
+            class="tab-pane fade show active"
+            id="records-pane"
+            role="tabpanel"
+            aria-labelledby="records-tab"
+            tabindex="0"
+        >
+            <?php if ($state !== 'current'): ?>
+                <div class="alert alert-warning">
+                    Example data operations are unavailable until the database lifecycle is current.
+                    Use the <strong>Lifecycle</strong> tab to install or update the schema.
+                </div>
+            <?php else: ?>
+                <section class="card border-secondary mb-4">
+                    <div class="card-body">
+                        <h2 class="h5">Create Example Record</h2>
 
-            <dt>Module Version</dt>
-            <dd><?= htmlspecialchars((string) ($module['version'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></dd>
+                        <form method="POST" action="/admin/example">
+                            <?= $this->csrf_field(); ?>
+                            <input type="hidden" name="action" value="create">
 
-            <dt>Schema Version</dt>
-            <dd><?= htmlspecialchars((string) ($module['schema_version'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></dd>
-
-            <dt>Database State</dt>
-            <dd><strong><?= htmlspecialchars($state, ENT_QUOTES, 'UTF-8'); ?></strong></dd>
-        </dl>
-
-        <?php if ($state === 'missing'): ?>
-            <form method="POST" action="/admin/example">
-                <?= $this->csrf_field(); ?>
-                <input type="hidden" name="action" value="install_sql">
-                <button type="submit">Install SQL</button>
-            </form>
-        <?php elseif ($state === 'update'): ?>
-            <form method="POST" action="/admin/example">
-                <?= $this->csrf_field(); ?>
-                <input type="hidden" name="action" value="update_sql">
-                <button type="submit">Update SQL</button>
-            </form>
-        <?php elseif ($state === 'invalid'): ?>
-            <p>
-                The Example database state is invalid. No lifecycle or CRUD
-                mutation will be performed until the state is corrected.
-            </p>
-        <?php endif; ?>
-
-        <?php if ($state === 'current'): ?>
-            <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
-                <form
-                    method="POST"
-                    action="/admin/example"
-                    onsubmit="return confirm('Delete all Example module data while preserving its schema?');"
-                >
-                    <?= $this->csrf_field(); ?>
-                    <input type="hidden" name="action" value="delete_data">
-                    <button type="submit">Delete Data</button>
-                </form>
-
-                <form
-                    method="POST"
-                    action="/admin/example"
-                    onsubmit="return confirm('Reset Example data to the canonical reference state?');"
-                >
-                    <?= $this->csrf_field(); ?>
-                    <input type="hidden" name="action" value="reset_data">
-                    <button type="submit">Data Reset</button>
-                </form>
-            </div>
-        <?php endif; ?>
-    </section>
-
-    <?php if ($state === 'current'): ?>
-        <hr>
-
-        <section>
-            <h2>Create Example Record</h2>
-
-            <form method="POST" action="/admin/example">
-                <?= $this->csrf_field(); ?>
-                <input type="hidden" name="action" value="create">
-
-                <p>
-                    <label for="example-title">Title</label><br>
-                    <input
-                        id="example-title"
-                        type="text"
-                        name="title"
-                        maxlength="150"
-                        required
-                        style="width:100%; box-sizing:border-box;"
-                    >
-                </p>
-
-                <p>
-                    <label for="example-body">Body</label><br>
-                    <textarea
-                        id="example-body"
-                        name="body"
-                        rows="5"
-                        maxlength="2000"
-                        required
-                        style="width:100%; box-sizing:border-box;"
-                    ></textarea>
-                </p>
-
-                <p>
-                    <label>
-                        <input type="checkbox" name="is_active" value="1" checked>
-                        Active
-                    </label>
-                </p>
-
-                <button type="submit">Create Record</button>
-            </form>
-        </section>
-
-        <hr>
-
-        <section>
-            <h2>Example Records</h2>
-
-            <?php if (empty($records)): ?>
-                <p>No Example records exist.</p>
-            <?php endif; ?>
-
-            <?php foreach ($records as $record): ?>
-                <article style="margin-bottom:2rem;">
-                    <form method="POST" action="/admin/example">
-                        <?= $this->csrf_field(); ?>
-                        <input type="hidden" name="action" value="update">
-                        <input type="hidden" name="id" value="<?= (int) $record['id']; ?>">
-
-                        <p>
-                            <label>
-                                Title<br>
+                            <div class="mb-3">
+                                <label for="example-title" class="form-label">Title</label>
                                 <input
+                                    id="example-title"
                                     type="text"
                                     name="title"
                                     maxlength="150"
+                                    class="form-control"
                                     required
-                                    value="<?= htmlspecialchars(
-                                        (string) $record['title'],
-                                        ENT_QUOTES,
-                                        'UTF-8'
-                                    ); ?>"
-                                    style="width:100%; box-sizing:border-box;"
                                 >
-                            </label>
-                        </p>
+                            </div>
 
-                        <p>
-                            <label>
-                                Body<br>
+                            <div class="mb-3">
+                                <label for="example-body" class="form-label">Body</label>
                                 <textarea
+                                    id="example-body"
                                     name="body"
                                     rows="5"
                                     maxlength="2000"
+                                    class="form-control"
                                     required
-                                    style="width:100%; box-sizing:border-box;"
-                                ><?= htmlspecialchars(
-                                    (string) $record['body'],
-                                    ENT_QUOTES,
-                                    'UTF-8'
-                                ); ?></textarea>
-                            </label>
-                        </p>
+                                ></textarea>
+                            </div>
 
-                        <p>
-                            <label>
+                            <div class="form-check mb-3">
                                 <input
+                                    id="example-active"
+                                    class="form-check-input"
                                     type="checkbox"
                                     name="is_active"
                                     value="1"
-                                    <?= (int) $record['is_active'] === 1 ? 'checked' : ''; ?>
+                                    checked
                                 >
-                                Active
-                            </label>
-                        </p>
+                                <label class="form-check-label" for="example-active">Active</label>
+                            </div>
 
-                        <button type="submit">Update Record</button>
-                    </form>
+                            <button type="submit" class="btn btn-outline-primary">Create Record</button>
+                        </form>
+                    </div>
+                </section>
 
-                    <form
-                        method="POST"
-                        action="/admin/example"
-                        onsubmit="return confirm('Delete this Example record?');"
-                        style="margin-top:.5rem;"
-                    >
-                        <?= $this->csrf_field(); ?>
-                        <input type="hidden" name="action" value="delete">
-                        <input type="hidden" name="id" value="<?= (int) $record['id']; ?>">
-                        <button type="submit">Delete Record</button>
-                    </form>
-                </article>
-            <?php endforeach; ?>
-        </section>
-    <?php endif; ?>
+                <section>
+                    <h2 class="h5">Example Records</h2>
+
+                    <?php if (empty($records)): ?>
+                        <p class="text-secondary">No Example records exist.</p>
+                    <?php endif; ?>
+
+                    <?php foreach ($records as $record): ?>
+                        <article class="card border-secondary mb-3">
+                            <div class="card-body">
+                                <form method="POST" action="/admin/example">
+                                    <?= $this->csrf_field(); ?>
+                                    <input type="hidden" name="action" value="update">
+                                    <input type="hidden" name="id" value="<?= (int) $record['id']; ?>">
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Title</label>
+                                        <input
+                                            type="text"
+                                            name="title"
+                                            maxlength="150"
+                                            required
+                                            class="form-control"
+                                            value="<?= htmlspecialchars((string) $record['title'], ENT_QUOTES, 'UTF-8'); ?>"
+                                        >
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Body</label>
+                                        <textarea
+                                            name="body"
+                                            rows="5"
+                                            maxlength="2000"
+                                            required
+                                            class="form-control"
+                                        ><?= htmlspecialchars((string) $record['body'], ENT_QUOTES, 'UTF-8'); ?></textarea>
+                                    </div>
+
+                                    <div class="form-check mb-3">
+                                        <input
+                                            class="form-check-input"
+                                            type="checkbox"
+                                            name="is_active"
+                                            value="1"
+                                            <?= (int) $record['is_active'] === 1 ? 'checked' : ''; ?>
+                                        >
+                                        <label class="form-check-label">Active</label>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-outline-success">Update Record</button>
+                                </form>
+
+                                <form
+                                    method="POST"
+                                    action="/admin/example"
+                                    onsubmit="return confirm('Delete this Example record?');"
+                                    class="mt-2"
+                                >
+                                    <?= $this->csrf_field(); ?>
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="id" value="<?= (int) $record['id']; ?>">
+                                    <button type="submit" class="btn btn-outline-danger">Delete Record</button>
+                                </form>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
+                </section>
+            <?php endif; ?>
+        </div>
+
+        <div
+            class="tab-pane fade"
+            id="lifecycle-pane"
+            role="tabpanel"
+            aria-labelledby="lifecycle-tab"
+            tabindex="0"
+        >
+            <section class="card border-secondary mb-4">
+                <div class="card-body">
+                    <h2 class="h5">Module &amp; Data Lifecycle</h2>
+
+                    <p class="text-secondary">
+                        Data lifecycle operations are distinct from the Module lifecycle.
+                        <strong>Delete Data</strong> removes Example-owned records while preserving the installed schema.
+                        <strong>Data Reset</strong> removes mutable Example data and restores the canonical reference records supplied with the Module.
+                    </p>
+
+                    <dl class="row mb-4">
+                        <dt class="col-sm-3">Module</dt>
+                        <dd class="col-sm-9"><?= htmlspecialchars((string) ($module['name'] ?? 'Example'), ENT_QUOTES, 'UTF-8'); ?></dd>
+
+                        <dt class="col-sm-3">Module Version</dt>
+                        <dd class="col-sm-9"><?= htmlspecialchars((string) ($module['version'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></dd>
+
+                        <dt class="col-sm-3">Schema Version</dt>
+                        <dd class="col-sm-9"><?= htmlspecialchars((string) ($module['schema_version'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></dd>
+
+                        <dt class="col-sm-3">Database State</dt>
+                        <dd class="col-sm-9"><strong><?= htmlspecialchars($state, ENT_QUOTES, 'UTF-8'); ?></strong></dd>
+                    </dl>
+
+                    <?php if ($state === 'missing'): ?>
+                        <div class="alert alert-warning">The Example database schema is not installed.</div>
+                        <form method="POST" action="/admin/example">
+                            <?= $this->csrf_field(); ?>
+                            <input type="hidden" name="action" value="install_sql">
+                            <button type="submit" class="btn btn-primary">Install SQL</button>
+                        </form>
+                    <?php elseif ($state === 'update'): ?>
+                        <div class="alert alert-warning">The Example database schema requires a packaged migration.</div>
+                        <form method="POST" action="/admin/example">
+                            <?= $this->csrf_field(); ?>
+                            <input type="hidden" name="action" value="update_sql">
+                            <button type="submit" class="btn btn-primary">Update SQL</button>
+                        </form>
+                    <?php elseif ($state === 'invalid'): ?>
+                        <div class="alert alert-danger">
+                            The Example database state is invalid. No lifecycle or CRUD mutation will be performed until the state is corrected.
+                        </div>
+                    <?php elseif ($state === 'current'): ?>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <form
+                                method="POST"
+                                action="/admin/example"
+                                onsubmit="return confirm('Delete all Example module data while preserving its schema?');"
+                            >
+                                <?= $this->csrf_field(); ?>
+                                <input type="hidden" name="action" value="delete_data">
+                                <button type="submit" class="btn btn-outline-danger">Delete Data</button>
+                            </form>
+
+                            <form
+                                method="POST"
+                                action="/admin/example"
+                                onsubmit="return confirm('Reset Example data to the canonical reference state?');"
+                            >
+                                <?= $this->csrf_field(); ?>
+                                <input type="hidden" name="action" value="reset_data">
+                                <button type="submit" class="btn btn-outline-warning">Data Reset</button>
+                            </form>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </section>
+        </div>
+    </div>
 </div>
 
 <?php
-
 require APPROOT . '/views/inc/foot.php';
+/* [End AI:GPT-5.6 Sol] */
