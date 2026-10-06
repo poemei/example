@@ -13,6 +13,7 @@ $moduleSlug = (string) ($module['module'] ?? 'example');
 $updateUrl = trim((string) ($module['update_url'] ?? ''));
 $hasUpdateSource = filter_var($updateUrl, FILTER_VALIDATE_URL) !== false
     && strtolower((string) parse_url($updateUrl, PHP_URL_SCHEME)) === 'https';
+$canManageModule = (int) ($_SESSION['user_level'] ?? 0) >= 9;
 ?>
 
 <p><small><a href="/admin">Admin</a> &gt;&gt; <strong>Example</strong></small></p>
@@ -39,14 +40,20 @@ $hasUpdateSource = filter_var($updateUrl, FILTER_VALIDATE_URL) !== false
             <button class="nav-link active" id="records-tab" data-bs-toggle="tab" data-bs-target="#records-pane" type="button" role="tab" aria-controls="records-pane" aria-selected="true">Records</button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="lifecycle-tab" data-bs-toggle="tab" data-bs-target="#lifecycle-pane" type="button" role="tab" aria-controls="lifecycle-pane" aria-selected="false">Lifecycle</button>
+            <button class="nav-link" id="database-tab" data-bs-toggle="tab" data-bs-target="#database-pane" type="button" role="tab" aria-controls="database-pane" aria-selected="false">Database</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="data-tab" data-bs-toggle="tab" data-bs-target="#data-pane" type="button" role="tab" aria-controls="data-pane" aria-selected="false">Data</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="module-tab" data-bs-toggle="tab" data-bs-target="#module-pane" type="button" role="tab" aria-controls="module-pane" aria-selected="false">Module</button>
         </li>
     </ul>
 
     <div class="tab-content">
         <div class="tab-pane fade show active" id="records-pane" role="tabpanel" aria-labelledby="records-tab" tabindex="0">
             <?php if ($state !== 'current'): ?>
-                <div class="alert alert-warning">Example data operations are unavailable until the database lifecycle is current. Use the <strong>Lifecycle</strong> tab to install or update the schema.</div>
+                <div class="alert alert-warning">Example record operations are unavailable until the database lifecycle is current. Use the <strong>Database</strong> tab to install or update the schema.</div>
             <?php else: ?>
                 <section class="card border-secondary mb-4">
                     <div class="card-body">
@@ -84,14 +91,12 @@ $hasUpdateSource = filter_var($updateUrl, FILTER_VALIDATE_URL) !== false
             <?php endif; ?>
         </div>
 
-        <div class="tab-pane fade" id="lifecycle-pane" role="tabpanel" aria-labelledby="lifecycle-tab" tabindex="0">
+        <div class="tab-pane fade" id="database-pane" role="tabpanel" aria-labelledby="database-tab" tabindex="0">
             <section class="card border-secondary mb-4"><div class="card-body">
-                <h2 class="h5">Module &amp; Data Lifecycle</h2>
-                <p class="text-secondary">Data lifecycle operations are distinct from the Module lifecycle. <strong>Delete Data</strong> removes Example-owned records while preserving the installed schema. <strong>Data Reset</strong> removes mutable Example data and restores the canonical reference records supplied with the Module.</p>
+                <h2 class="h5">Database Lifecycle</h2>
+                <p class="text-secondary">Schema installation and migration are explicit operations. Loading an Admin or public page never installs or updates SQL.</p>
 
                 <dl class="row mb-4">
-                    <dt class="col-sm-3">Module</dt><dd class="col-sm-9"><?= htmlspecialchars((string) ($module['name'] ?? 'Example'), ENT_QUOTES, 'UTF-8'); ?></dd>
-                    <dt class="col-sm-3">Module Version</dt><dd class="col-sm-9"><span id="example-module-version"><?= htmlspecialchars((string) ($module['version'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span></dd>
                     <dt class="col-sm-3">Schema Version</dt><dd class="col-sm-9"><?= htmlspecialchars((string) ($module['schema_version'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></dd>
                     <dt class="col-sm-3">Database State</dt><dd class="col-sm-9"><strong><?= htmlspecialchars($state, ENT_QUOTES, 'UTF-8'); ?></strong></dd>
                 </dl>
@@ -104,42 +109,89 @@ $hasUpdateSource = filter_var($updateUrl, FILTER_VALIDATE_URL) !== false
                     <form method="POST" action="/admin/example"><?= $this->csrf_field(); ?><input type="hidden" name="action" value="update_sql"><button type="submit" class="btn btn-primary">Update SQL</button></form>
                 <?php elseif ($state === 'invalid'): ?>
                     <div class="alert alert-danger">The Example database state is invalid. No lifecycle or CRUD mutation will be performed until the state is corrected.</div>
-                <?php elseif ($state === 'current'): ?>
-                    <div class="d-flex gap-2 flex-wrap mb-4">
+                <?php else: ?>
+                    <div class="alert alert-success">The Example schema is current.</div>
+                <?php endif; ?>
+            </div></section>
+        </div>
+
+        <div class="tab-pane fade" id="data-pane" role="tabpanel" aria-labelledby="data-tab" tabindex="0">
+            <section class="card border-secondary mb-4"><div class="card-body">
+                <h2 class="h5">Data Lifecycle</h2>
+                <p class="text-secondary"><strong>Delete Data</strong> removes Example-owned records while preserving the installed schema. <strong>Data Reset</strong> removes mutable data and restores the packaged canonical reference records.</p>
+
+                <?php if ($state === 'current'): ?>
+                    <div class="d-flex gap-2 flex-wrap">
                         <form method="POST" action="/admin/example" onsubmit="return confirm('Delete all Example module data while preserving its schema?');"><?= $this->csrf_field(); ?><input type="hidden" name="action" value="delete_data"><button type="submit" class="btn btn-outline-danger">Delete Data</button></form>
                         <form method="POST" action="/admin/example" onsubmit="return confirm('Reset Example data to the canonical reference state?');"><?= $this->csrf_field(); ?><input type="hidden" name="action" value="reset_data"><button type="submit" class="btn btn-outline-warning">Data Reset</button></form>
                     </div>
+                <?php else: ?>
+                    <div class="alert alert-warning">Data lifecycle operations require a current database schema.</div>
                 <?php endif; ?>
+            </div></section>
+        </div>
 
-                <hr>
-                <h3 class="h6">Module Update</h3>
-                <p class="text-secondary small">Update discovery and installation are performed by ChAoS Core. The Example module does not download or install its own files.</p>
+        <div class="tab-pane fade" id="module-pane" role="tabpanel" aria-labelledby="module-tab" tabindex="0">
+            <section class="card border-secondary mb-4"><div class="card-body">
+                <h2 class="h5">Module Lifecycle</h2>
+                <p class="text-secondary">Update, filesystem rollback, and Nuke are owned and enforced by ChAoS Core. The Example module only submits authenticated requests to those Core operations.</p>
 
-                <?php if ($hasUpdateSource): ?>
+                <dl class="row mb-4">
+                    <dt class="col-sm-3">Module</dt><dd class="col-sm-9"><?= htmlspecialchars((string) ($module['name'] ?? 'Example'), ENT_QUOTES, 'UTF-8'); ?></dd>
+                    <dt class="col-sm-3">Module Version</dt><dd class="col-sm-9"><span id="example-module-version"><?= htmlspecialchars((string) ($module['version'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span></dd>
+                    <dt class="col-sm-3">Update Source</dt><dd class="col-sm-9"><code><?= htmlspecialchars($updateUrl, ENT_QUOTES, 'UTF-8'); ?></code></dd>
+                </dl>
+
+                <?php if (!$canManageModule): ?>
+                    <div class="alert alert-warning">Core Module Lifecycle operations require a level 9 administrator.</div>
+                <?php elseif ($hasUpdateSource): ?>
                     <button type="button" id="example-module-update" class="btn btn-secondary" data-module="<?= htmlspecialchars($moduleSlug, ENT_QUOTES, 'UTF-8'); ?>" data-action="check" disabled>Checking for updates...</button>
                     <p id="example-module-update-status" class="small mt-2 mb-0" role="status" aria-live="polite"></p>
                 <?php else: ?>
                     <button type="button" class="btn btn-outline-secondary" disabled>Local Module</button>
                     <p class="small text-secondary mt-2 mb-0">A valid HTTPS update_url is required in module.json.</p>
                 <?php endif; ?>
+
+                <?php if ($canManageModule): ?>
+                    <hr>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button type="button" id="example-module-rollback" class="btn btn-outline-warning">Rollback Filesystem</button>
+                        <form method="POST" action="/admin/uninstall" onsubmit="return confirm('Nuke Example? Core will remove its owned tables and module files.');">
+                            <?= $this->csrf_field(); ?>
+                            <input type="hidden" name="module" value="example">
+                            <button type="submit" class="btn btn-danger">Nuke Module</button>
+                        </form>
+                    </div>
+                    <p id="example-module-rollback-status" class="small mt-2 mb-0" role="status" aria-live="polite"></p>
+                    <p class="small text-secondary mt-2 mb-0">Filesystem rollback restores the one retained previous module version. Database migrations are not reversed.</p>
+                <?php endif; ?>
             </div></section>
         </div>
     </div>
 </div>
 
-<?php if ($hasUpdateSource): ?>
+<?php if ($canManageModule): ?>
 <script>
 const exampleModuleUpdateButton = document.getElementById('example-module-update');
 const exampleModuleUpdateStatus = document.getElementById('example-module-update-status');
 const exampleModuleVersion = document.getElementById('example-module-version');
+const exampleModuleRollbackButton = document.getElementById('example-module-rollback');
+const exampleModuleRollbackStatus = document.getElementById('example-module-rollback-status');
 const exampleModuleUpdateCsrfToken = <?= json_encode($this->csrf_token()); ?>;
 
 function exampleModuleRequestBody(module) {
     return new URLSearchParams({module, csrf_token: exampleModuleUpdateCsrfToken}).toString();
 }
 
+const exampleModuleSlug = <?= json_encode($moduleSlug); ?>;
+
+function exampleModuleRollbackRequestBody(module) {
+    return new URLSearchParams({module, csrf_token: exampleModuleUpdateCsrfToken, operation: 'rollback', confirm_files_only: '1'}).toString();
+}
+
 async function checkExampleModuleUpdate() {
     const btn = exampleModuleUpdateButton;
+    if (!btn) return;
     btn.textContent = 'Checking for updates...';
     btn.className = 'btn btn-secondary';
     btn.dataset.action = 'check';
@@ -209,15 +261,39 @@ async function installExampleModuleUpdate() {
     }
 }
 
-exampleModuleUpdateButton.addEventListener('click', () => {
-    if (exampleModuleUpdateButton.dataset.action === 'update') {
-        installExampleModuleUpdate();
-    } else if (exampleModuleUpdateButton.dataset.action === 'check') {
-        checkExampleModuleUpdate();
+if (exampleModuleUpdateButton) {
+    exampleModuleUpdateButton.addEventListener('click', () => {
+        if (exampleModuleUpdateButton.dataset.action === 'update') {
+            installExampleModuleUpdate();
+        } else if (exampleModuleUpdateButton.dataset.action === 'check') {
+            checkExampleModuleUpdate();
+        }
+    });
+}
+
+exampleModuleRollbackButton.addEventListener('click', async () => {
+    if (!confirm('Restore the previous Example filesystem version? Database changes will not be reversed.')) return;
+    exampleModuleRollbackButton.disabled = true;
+    exampleModuleRollbackStatus.textContent = 'ChAoS Core is restoring the previous module filesystem version...';
+    try {
+        const response = await fetch('/admin/update', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: exampleModuleRollbackRequestBody(exampleModuleSlug)
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.error || 'Module rollback failed.');
+        exampleModuleVersion.textContent = result.version;
+        exampleModuleRollbackStatus.textContent = result.message || `Example rolled back to ${result.version}.`;
+        if (exampleModuleUpdateButton) await checkExampleModuleUpdate();
+    } catch (error) {
+        exampleModuleRollbackStatus.textContent = error instanceof Error ? error.message : 'Module rollback failed.';
+    } finally {
+        exampleModuleRollbackButton.disabled = false;
     }
 });
 
-checkExampleModuleUpdate();
+if (exampleModuleUpdateButton) checkExampleModuleUpdate();
 </script>
 <?php endif; ?>
 

@@ -1,34 +1,18 @@
 # Changelog
 
-All notable changes to the ChAoS MVC Example user Module are recorded here.
+## 2.0.2 — 2026-10-05
 
-## 2.0.0 — 2026-09-17
+### Added
 
-- Rebuilt Example against the current ChAoS MVC Module architecture.
-- Added deterministic database lifecycle states: `missing`, `update`, `current`, and `invalid`.
-- Added Module-owned SQL installation.
-- Added exact-version schema migration from 1.9.0 to 2.0.0.
-- Added the `example_schema` lifecycle state table.
-- Added canonical `sql/references.sql` data.
-- Added Delete Data while preserving installed schema.
-- Added explicit Data Reset that deletes mutable Example data and restores canonical reference data.
-- Retained and completed Create, Read, Update, and Delete demonstrations.
-- Added record existence validation before update and delete.
-- Added POST + CSRF protection to every mutation.
-- Added visible success and failure status to Admin operations.
-- Simplified the public index to explain what Example is.
-- Rebuilt the Admin index to explain what the implementation demonstrates and provide the functional lifecycle/CRUD laboratory.
-- Removed the obsolete decorative `views/admin/example.php`.
-- Updated module metadata and documentation.
-
-## 1.9.0 — 2026-09-01
-
-- Modernized the module as a user-module example.
-- Added public Controller → Model → View operation.
-- Added authenticated Admin record CRUD.
-- Added module-owned `example_records` SQL schema.
-
-## 1.8.9 — Initial Instructional Design
-
-- Provided a minimal public Example controller and view.
-- Provided basic module metadata and an Admin entry point.
+- Complete Module Lifecycle reference integration with Core-owned update and
+  uninstall operations.
+- Database-state detection for missing, current, update-required, and invalid
+  schema states.
+- Explicit Install SQL and Update SQL lifecycle actions.
+- Module-owned `example_schema` and `example_records` table declarations.
+- Data Lifecycle actions for Delete Data and canonical Data Reset.
+- Complete Create, Read, Update, and Delete record operations.
+- Packaged schema, reference data, and the 1.9.0-to-2.0.0 migration.
+- CSRF-protected, POST-only mutation actions with an explicit action allowlist.
+- Lifecycle and CRUD documentation for module developers.
+- Focused Admin tabs for Records, Database, Data, and Module lifecycle concerns.

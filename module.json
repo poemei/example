@@ -1,17 +1,19 @@
 {
-    "name": "Example",
+    "name": "Example Module",
     "module": "example",
-    "version": "2.0.0",
+    "version": "2.0.2",
     "schema_version": "2.0.0",
     "description": "Canonical ChAoS MVC user Module reference for MVC structure, Module and Data Lifecycles, Data Reset, and complete CRUD.",
-    "update_url": "https://yourdomain.com/updates/modules/example.json",
-    "creator": "Your Initials",
-    "domain": "www.yourdomain.com",
-    "certified": "No",
+    "update_url": "https://poemei.com/projects/modules/example/module.json",
+    "creator": "PM",
+    "domain": "poemei.com",
+    "certified": "Yes",
     "signing": {
         "algorithm": "rsa-sha256",
-        "key_id": "Your-keys-id",
-        "public_key": "your base64 public key from public.pem"
+        "fingerprint": "762379FB834CDBE299CD5A817640B4869AD65E22",
+        "sha256": "474df98da63dd2146bbced42bf73be1aa6eea4266c05c946f9f7e426184fd48d",
+        "key_id": "pm-e3c2ffdafb9920f7",
+        "public_key": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQm9qQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FZOEFNSUlCaWdLQ0FZRUFqbi94TTVYRnQwS0tOVVA1REkxbgppRi9UalQ3WnE5cWxvdVQ4VlV4cFpZNnRVZ2QrYkg1dmxzcnkzNm9IcmFCZGpVTDN2VVp1UXJ3cjlTSUNtd2YzCmNHbUh6cWFBcXdMS1ZvcEtqTHFzZ0JUem01SjNqUk1XSFM5VFN2clE3MzQrU0tDcWY1OHh0VU83dS91ZmxrK1UKR1hvclZ3K1NiTVRHczhSdHRtcm0xemlmZHJxODNyTUVybGFFUlBhWnozZUhqMzZWZ2hJMHkwMkJvWW9rZ2dsRgo1VEgvYWs2Ykhwako3alNzdzFoV2J2bnViZDNiSXo2VmI4OVRhbE9XUkZsOEpnaUo5UzNkWTlITnIxVmp3ZGlRCit5RnlnQm9VTzlpYmJ3S1RMOGVaWVlaZDlRbU1mU2ZwdjdadVJVdmhoKy96RkdDYmNZWjlra2RWcE9OajdlMmgKUTVMbDEvM2ZteWxacmxNZ3gwbUk1SUJBd01OWFZoSWtsb3J0SFlrdCtwckFnb1dhQlQ4Q0pRZHJNS3JUN1gwLwpTMUdIMUh2Zzljb0x2U0RoWlkxQXdmTUtrZmxqMDk4UWx0dzhtVGE0U21PQjVSTE04ZzJlN0oycWh5ZnlGdnc1Cno1Z2JWd0d5Y3JQWU5oc2xYWUpxZEZOd09xdmxXR25pQUxPQ2x0eXhZMEV0QWdNQkFBRT0KLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg=="
     },
     "files": [
         "controllers/example.php",
